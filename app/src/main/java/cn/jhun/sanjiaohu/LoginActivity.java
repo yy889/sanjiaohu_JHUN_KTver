@@ -120,11 +120,12 @@ public final class LoginActivity extends Activity {
         });
     }
     @Override protected void onDestroy(){attempt++;handler.removeCallbacksAndMessages(null);submittedPassword=null;vault.shutdown();password.setText("");engine.stopLoading();engine.destroy();super.onDestroy();}
-    LinearLayout column(){LinearLayout v=new LinearLayout(this);v.setOrientation(1);return v;}
+    LinearLayout column(){return Ui.column(this);}
     LinearLayout.LayoutParams fieldLayout(){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(56));p.bottomMargin=dp(16);return p;}
     EditText input(String hint,boolean secret){EditText e=new EditText(this);e.setHint(hint);e.setTextColor(theme.text);e.setHintTextColor(theme.muted);e.setSingleLine(true);e.setTextSize(16);e.setPadding(dp(16),0,dp(16),0);e.setBackground(shape(ThemePalette.mix(theme.primary,0xffffffff,.88)));e.setInputType(InputType.TYPE_CLASS_TEXT|(secret?InputType.TYPE_TEXT_VARIATION_PASSWORD:InputType.TYPE_TEXT_VARIATION_NORMAL));e.setSaveEnabled(false);e.setAutofillHints(secret?View.AUTOFILL_HINT_PASSWORD:View.AUTOFILL_HINT_USERNAME);return e;}
     TextView text(String s,int size,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(size);v.setTextColor(color);return v;}
-    GradientDrawable shape(int color){GradientDrawable s=new GradientDrawable();s.setColor(color);s.setCornerRadius(dp(16));return s;}
-    int dp(float n){return (int)(getResources().getDisplayMetrics().density*n+.5f);}
+    /** Keeps its original single-argument shape: this screen always uses a 16dp corner. */
+    GradientDrawable shape(int color){return Ui.shape(this,color,16);}
+    int dp(float n){return Ui.dp(this,n);}
     String asset(String name)throws IOException{try(InputStream in=getAssets().open(name);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[4096];int n;while((n=in.read(b))!=-1)out.write(b,0,n);return out.toString("UTF-8");}}
 }

@@ -379,7 +379,7 @@ public class MainActivity extends Activity {
         space(body,12);TextView note=label(summaryAll?summaryState:gradeState,11,MUTED,false);note.setLineSpacing(dp(3),1);body.addView(note);
     }
     LinearLayout panel(){LinearLayout p=column();p.setPadding(dp(20),dp(20),dp(20),dp(20));p.setBackground(shape(ThemePalette.mix(PRIMARY,Color.WHITE,.9),22));return p;}
-    void space(LinearLayout parent,int size){parent.addView(new View(this),new LinearLayout.LayoutParams(1,dp(size)));}
+    void space(LinearLayout parent,int size){Ui.space(this,parent,size);}
     View homeView(){
         LinearLayout content=column();content.setPadding(dp(6),dp(16),dp(6),dp(18));TextView heading=label("常用入口",17,INK,true);content.addView(heading);space(content,14);
         LinearLayout top=row();top.addView(homeEntry("自定义课程","添加与管理",8,()->showCustomCourses()),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams spacer=new LinearLayout.LayoutParams(0,-2,1);spacer.leftMargin=dp(12);top.addView(homeEntry("成绩查看","按学期查看",11,()->openGrades()),spacer);content.addView(top);
@@ -494,11 +494,11 @@ public class MainActivity extends Activity {
         sheet.actions(this,"保存设置",()->{prefs.edit().putInt("courseTransparency",value[0]).apply();sheet.dialog.dismiss();});showSheet(sheet);
         sheet.dialog.setOnDismissListener(d->{if(activeSheet==sheet.dialog)activeSheet=null;if(!isDestroyed())for(CourseCardView card:visibleCards)styleCourseCard(card,(Integer)card.getTag(),transparency());});
     }
-    void place(FrameLayout parent,View v,int x,int y,int w,int h){FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(w,h);lp.leftMargin=x;lp.topMargin=y;parent.addView(v,lp);}
-    int dp(float x){return (int)(x*getResources().getDisplayMetrics().density+0.5f);}
-    LinearLayout column(){LinearLayout l=new LinearLayout(this);l.setOrientation(1);return l;}
-    LinearLayout row(){LinearLayout l=new LinearLayout(this);l.setGravity(Gravity.CENTER_VERTICAL);return l;}
-    LinearLayout.LayoutParams weighted(){return new LinearLayout.LayoutParams(0,dp(44),1);}
+    void place(FrameLayout parent,View v,int x,int y,int w,int h){Ui.place(parent,v,x,y,w,h);}
+    int dp(float x){return Ui.dp(this,x);}
+    LinearLayout column(){return Ui.column(this);}
+    LinearLayout row(){return Ui.row(this);}
+    LinearLayout.LayoutParams weighted(){return Ui.weighted(this);}
     TextView label(String s,int size,int color,boolean bold){TextView v=new TextView(this);v.setText(s);v.setTextSize(size);v.setTextColor(color);v.setFontFeatureSettings("kern");if(bold)v.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));return v;}
     TextView button(String s,Runnable action){TextView v=label(s,13,ACCENT_TEXT,true);v.setGravity(Gravity.CENTER);v.setPadding(dp(12),dp(10),dp(12),dp(10));v.setMinHeight(dp(44));v.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((PRIMARY&0xffffff)|0x33000000),shape(Color.TRANSPARENT,14),shape(Color.WHITE,14)));v.setOnClickListener(x->action.run());v.setFocusable(true);v.setContentDescription(s);return v;}
     TextView themedButton(String text,Runnable action,boolean filled){
@@ -506,5 +506,5 @@ public class MainActivity extends Activity {
         GradientDrawable surface=shape(filled?PRIMARY:palette.entrySurface,15);if(!filled)surface.setStroke(dp(1),ThemePalette.mix(PRIMARY,Color.WHITE,.55));
         control.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(((filled?ON_PRIMARY:PRIMARY)&0xffffff)|0x22000000),surface,shape(Color.WHITE,15)));return control;
     }
-    GradientDrawable shape(int c,int radius){GradientDrawable d=new GradientDrawable();d.setColor(c);d.setCornerRadius(dp(radius));return d;}
+    GradientDrawable shape(int c,int radius){return Ui.shape(this,c,radius);}
 }
