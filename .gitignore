@@ -1,0 +1,27 @@
+# Build output
+*.apk
+*.aab
+*.idsig
+*.ap_
+*.dex
+*.class
+*.jar
+
+# Local build/scratch directories
+.buildwork/
+.testclasses/
+build/
+.gradle/
+
+# Signing material must never be committed
+*.keystore
+*.jks
+*.p12
+*.pem
+
+# IDE / OS noise
+.idea/
+*.iml
+local.properties
+.DS_Store
+Thumbs.db
