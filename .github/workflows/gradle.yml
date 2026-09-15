@@ -1,0 +1,101 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # The project intentionally ships without a Gradle wrapper (see README:
+      # "不附 Gradle Wrapper 二进制"), so the wrapper cannot be used here.
+      # AGP 8.13.0 requires Gradle 8.13 or newer.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: >-
+            platforms;android-36
+            build-tools;36.0.0
+
+      # The suite under tests/ is plain Java mains plus Node scripts; it is not
+      # wired into Gradle's test source sets, so it is invoked directly. This is
+      # the same mechanism documented in the README.
+      - name: Run Java regression tests
+        run: |
+          set -euo pipefail
+          src=app/src/main/java/cn/jhun/sanjiaohu
+          mkdir -p test-classes
+          javac -encoding UTF-8 -d test-classes \
+            "$src/Course.java" \
+            "$src/CachePolicy.java" \
+            "$src/GridGeometry.java" \
+            "$src/Term.java" \
+            "$src/CourseAppearance.java" \
+            "$src/CourseColors.java" \
+            "$src/ThemePalette.java" \
+            "$src/CalendarViewport.java" \
+            "$src/CustomCourses.java" \
+            tests/CourseTest.java \
+            tests/RevisionTest.java \
+            tests/TermTest.java \
+            tests/MealGridTest.java \
+            tests/AdaptiveTextTest.java \
+            tests/ThemeTest.java \
+            tests/CalendarViewportTest.java \
+            tests/CustomCoursesTest.java
+          for t in CourseTest RevisionTest TermTest MealGridTest AdaptiveTextTest \
+                   ThemeTest CalendarViewportTest CustomCoursesTest; do
+            echo "::group::$t"
+            java -cp test-classes "cn.jhun.sanjiaohu.$t"
+            echo "::endgroup::"
+          done
+
+      - name: Run Node adapter tests
+        run: |
+          set -euo pipefail
+          for f in tests/*.test.cjs; do
+            echo "::group::$f"
+            node "$f"
+            echo "::endgroup::"
+          done
+
+      - name: Build debug APK
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
