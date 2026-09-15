@@ -51,9 +51,9 @@ public final class MoreMenu {
         row.setOnClickListener(v->{popup.dismiss();action.run(id);});parent.addView(row,new LinearLayout.LayoutParams(-1,-2));
     }
     static TextView text(Activity a,String s,int size,int color,boolean bold){TextView t=new TextView(a);t.setText(s);t.setTextSize(size);t.setTextColor(color);if(bold)t.setTypeface(android.graphics.Typeface.create("sans-serif-medium",0));return t;}
-    static GradientDrawable shape(Activity a,int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(a,radius));return d;}
+    static GradientDrawable shape(Activity a,int color,int radius){return Ui.shape(a,color,radius);}
     static RippleDrawable ripple(Activity a,int primary){return new RippleDrawable(ColorStateList.valueOf((primary&0xffffff)|0x22000000),shape(a,Color.TRANSPARENT,12),shape(a,Color.WHITE,12));}
-    static int dp(Activity a,float value){return (int)(a.getResources().getDisplayMetrics().density*value+.5f);}
+    static int dp(Activity a,float value){return Ui.dp(a,value);}
     static final class Icon extends View {
         final int id;final Paint pen=new Paint(Paint.ANTI_ALIAS_FLAG);
         void setColor(int color){pen.setColor(color);invalidate();}

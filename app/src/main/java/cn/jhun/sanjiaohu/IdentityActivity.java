@@ -239,13 +239,13 @@ public final class IdentityActivity extends Activity {
         if(webDialog!=null)webDialog.dismiss();Dialog dialog=new Dialog(this);webDialog=dialog;dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);LinearLayout panel=column();panel.setPadding(dp(24),dp(22),dp(24),dp(20));panel.setBackground(shape(theme.surface,24));panel.addView(text("校园服务提示",19,theme.text,true));gap(panel,14);TextView words=text(message.length()>800?message.substring(0,800):message,14,theme.text,false);ScrollView scroll=new ScrollView(this);scroll.addView(words);panel.addView(scroll,new LinearLayout.LayoutParams(-1,dp(144)));gap(panel,18);LinearLayout buttons=row();final boolean[] handled={false};
         if(confirm){TextView cancel=action("取消",false,()->{handled[0]=true;result.cancel();dialog.dismiss();});buttons.addView(cancel,new LinearLayout.LayoutParams(0,dp(46),1));}TextView ok=action("确定",true,()->{handled[0]=true;result.confirm();dialog.dismiss();});LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(46),1);lp.leftMargin=confirm?dp(10):0;buttons.addView(ok,lp);panel.addView(buttons);dialog.setContentView(panel);dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));dialog.setOnDismissListener(v->{if(!handled[0])result.cancel();});dialog.show();dialog.getWindow().setLayout(Math.min(getResources().getDisplayMetrics().widthPixels-dp(40),dp(420)),-2);
     }
-    LinearLayout column(){LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.VERTICAL);return v;}
-    LinearLayout row(){LinearLayout v=new LinearLayout(this);v.setGravity(Gravity.CENTER_VERTICAL);return v;}
-    void gap(LinearLayout v,int size){v.addView(new View(this),new LinearLayout.LayoutParams(1,dp(size)));}
+    LinearLayout column(){return Ui.column(this);}
+    LinearLayout row(){return Ui.row(this);}
+    void gap(LinearLayout v,int size){Ui.space(this,v,size);}
     TextView text(String value,int size,int color,boolean bold){TextView t=new TextView(this);t.setText(value);t.setTextSize(size);t.setTextColor(color);if(bold)t.setTypeface(Typeface.create("sans-serif-medium",0));return t;}
     TextView action(String label,boolean primary,Runnable run){TextView v=text(label,label.length()==1?24:14,primary?theme.onPrimary:theme.deepAccent,true);v.setGravity(Gravity.CENTER);v.setFocusable(true);v.setBackground(new RippleDrawable(ColorStateList.valueOf((theme.primary&0xffffff)|0x33000000),shape(primary?theme.primary:theme.entrySurface,15),shape(Color.WHITE,15)));v.setOnClickListener(view->run.run());return v;}
     EditText input(String hint,boolean secret){EditText v=new EditText(this);v.setHint(hint);v.setSingleLine(true);v.setTextSize(16);v.setTextColor(theme.text);v.setHintTextColor(theme.muted);v.setPadding(dp(16),0,dp(16),0);v.setBackground(shape(theme.entrySurface,16));v.setInputType(InputType.TYPE_CLASS_TEXT|(secret?InputType.TYPE_TEXT_VARIATION_PASSWORD:InputType.TYPE_TEXT_VARIATION_NORMAL));v.setSaveEnabled(false);v.setAutofillHints(secret?View.AUTOFILL_HINT_PASSWORD:View.AUTOFILL_HINT_USERNAME);return v;}
     LinearLayout.LayoutParams field(){LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(56));lp.bottomMargin=dp(14);return lp;}
-    GradientDrawable shape(int color,int radius){GradientDrawable v=new GradientDrawable();v.setColor(color);v.setCornerRadius(dp(radius));return v;}
-    int dp(float value){return (int)(getResources().getDisplayMetrics().density*value+.5f);}
+    GradientDrawable shape(int color,int radius){return Ui.shape(this,color,radius);}
+    int dp(float value){return Ui.dp(this,value);}
 }

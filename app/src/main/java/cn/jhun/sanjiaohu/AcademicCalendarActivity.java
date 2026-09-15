@@ -59,7 +59,7 @@ public final class AcademicCalendarActivity extends Activity {
         button.setBackground(new RippleDrawable(ColorStateList.valueOf((theme.primary&0xffffff)|0x33000000),fill,mask));button.setOnClickListener(v->run.run());return button;
     }
     TextView text(String value,int size,int color){TextView t=new TextView(this);t.setText(value);t.setTextSize(size);t.setTextColor(color);return t;}
-    int dp(float v){return (int)(getResources().getDisplayMetrics().density*v+.5f);}
+    int dp(float v){return Ui.dp(this,v);}
 
     final class CalendarImage extends View {
         final Bitmap bitmap;

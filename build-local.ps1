@@ -4,7 +4,7 @@ param(
     [string]$Platform = 'android-36.1',
     [string]$BuildTools = '36.1.0',
     [string]$Work = "$PSScriptRoot/../../work/android-build",
-    [string]$Apk = "$PSScriptRoot/../Sanjiaohu-1.0.1.apk"
+    [string]$Apk = "$PSScriptRoot/../Sanjiaohu-y7c_0.1.apk"
 )
 $ErrorActionPreference = 'Stop'
 $tool = Join-Path $Sdk "build-tools/$BuildTools"
@@ -18,29 +18,45 @@ foreach ($part in @('classes', 'generated', 'dex')) {
 }
 New-Item -ItemType Directory -Force -Path $Work,"$Work/classes","$Work/generated","$Work/dex" | Out-Null
 function Check { if ($LASTEXITCODE -ne 0) { throw "Build step failed: $LASTEXITCODE" } }
+# Tools that write informational notes to stderr must not abort the script under
+# $ErrorActionPreference='Stop' (PowerShell 5.1 turns native stderr into errors).
+# Exit code remains the source of truth via Check.
+function Invoke-Tool { param([string]$Exe, [string[]]$Arguments)
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Exe @Arguments 2>&1 | ForEach-Object { Write-Host $_ } }
+    finally { $ErrorActionPreference = $previous }
+}
 & "$tool/aapt2.exe" compile --dir "$app/res" -o "$Work/resources.zip"
 Check
-$manifestText = Get-Content -LiteralPath "$app/AndroidManifest.xml" -Raw
-$manifestText.Replace('<manifest ', '<manifest package="cn.jhun.sanjiaohu" ') | Set-Content -LiteralPath "$Work/AndroidManifest.xml" -Encoding utf8
+# Read/write as explicit UTF-8. Get-Content/Set-Content -Encoding utf8 under
+# Windows PowerShell 5.1 round-trips through the ANSI code page and corrupts the
+# non-ASCII app label (三角狐), producing an invalid manifest.
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+$manifestText = [System.IO.File]::ReadAllText("$app/AndroidManifest.xml", $utf8NoBom)
+$manifestText = $manifestText.Replace('<manifest ', '<manifest package="cn.jhun.sanjiaohu" ')
+[System.IO.File]::WriteAllText("$Work/AndroidManifest.xml", $manifestText, $utf8NoBom)
 & "$tool/aapt2.exe" link -o "$Work/unsigned.apk" -I $android --manifest "$Work/AndroidManifest.xml" -A "$app/assets" --java "$Work/generated" "$Work/resources.zip"
 Check
 $sources = @(Get-ChildItem -LiteralPath "$app/java","$Work/generated" -Recurse -Filter '*.java' | ForEach-Object { $_.FullName })
-& "$Java/bin/javac.exe" -encoding UTF-8 -source 8 -target 8 -Xlint:-options -bootclasspath "$android;$tool/core-lambda-stubs.jar" -d "$Work/classes" @sources
+$javacArgs = @('-encoding','UTF-8','-source','8','-target','8','-Xlint:-options','-bootclasspath',"$android;$tool/core-lambda-stubs.jar",'-d',"$Work/classes") + $sources
+Invoke-Tool "$Java/bin/javac.exe" $javacArgs
 Check
 & "$Java/bin/jar.exe" cf "$Work/classes.jar" -C "$Work/classes" .
 Check
-& "$Java/bin/java.exe" -cp "$tool/lib/d8.jar" com.android.tools.r8.D8 --lib $android --min-api 26 --output "$Work/dex" "$Work/classes.jar"
+$ErrorActionPreference = 'Continue'
+Invoke-Tool "$Java/bin/java.exe" @('-cp',"$tool/lib/d8.jar",'com.android.tools.r8.D8','--lib',$android,'--min-api','26','--output',"$Work/dex","$Work/classes.jar")
 Check
-& "$Java/bin/jar.exe" uf "$Work/unsigned.apk" -C "$Work/dex" classes.dex
+Invoke-Tool "$Java/bin/jar.exe" @('uf',"$Work/unsigned.apk",'-C',"$Work/dex",'classes.dex')
 Check
-& "$tool/zipalign.exe" -f -p 4 "$Work/unsigned.apk" "$Work/aligned.apk"
+Invoke-Tool "$tool/zipalign.exe" @('-f','-p','4',"$Work/unsigned.apk","$Work/aligned.apk")
 Check
 if (!(Test-Path -LiteralPath "$Work/development.keystore")) {
-    & "$Java/bin/keytool.exe" -genkeypair -keystore "$Work/development.keystore" -storepass android -keypass android -alias androiddebugkey -dname 'CN=Jiangke Local Build' -keyalg RSA -keysize 2048 -validity 10000
+    Invoke-Tool "$Java/bin/keytool.exe" @('-genkeypair','-keystore',"$Work/development.keystore",'-storepass','android','-keypass','android','-alias','androiddebugkey','-dname','CN=Jiangke Local Build','-keyalg','RSA','-keysize','2048','-validity','10000')
     Check
 }
-& "$Java/bin/java.exe" -jar "$tool/lib/apksigner.jar" sign --ks "$Work/development.keystore" --ks-pass pass:android --key-pass pass:android --out $Apk "$Work/aligned.apk"
+Invoke-Tool "$Java/bin/java.exe" @('-jar',"$tool/lib/apksigner.jar",'sign','--ks',"$Work/development.keystore",'--ks-pass','pass:android','--key-pass','pass:android','--out',$Apk,"$Work/aligned.apk")
 Check
-& "$Java/bin/java.exe" -jar "$tool/lib/apksigner.jar" verify --verbose $Apk
+Invoke-Tool "$Java/bin/java.exe" @('-jar',"$tool/lib/apksigner.jar",'verify','--verbose',$Apk)
 Check
 Get-FileHash -LiteralPath $Apk -Algorithm SHA256
