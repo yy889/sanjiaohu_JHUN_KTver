@@ -1,6 +1,14 @@
-# 三角狐 v1.0.1
+# 三角狐 y7c_0.1
 
 江汉大学个人课表应用，Android 8.0 及以上。
+
+## y7c_0.1：提取共享 UI 工具类
+
+- 新增 Ui.java，承载 7 个无状态视图工具方法（dp / column / row / weighted / space / place / shape）。改动前这些实现被逐份复制在 7 个类里：dp 重复 7 份、shape 5 份、column 4 份、row 3 份。
+- 调用类保留同名方法并在内部委托给 Ui。MainActivity 被另外 5 个类（CalibrationSheet、CourseEditor、ThemeColorSheet、CourseDetailSheet、UiSheet）持有并直接调用 a.dp() / a.shape()，保留同名方法后这些调用点无需改动。
+- 刻意逐字保留两处原有数值语义：LoginActivity.shape(int) 仍是固定圆角 16 的单参数形式（若误统一为双参数形式，登录页输入框与「登录」按钮会静默变成直角）；Ui.dp 仍是 density*value + 0.5f 后截断（不能改成 Math.round，其对负数舍入方向相反）。
+- 对外版本号 y7c_0.1，内部 versionCode 递增至 32。
+- 准确表述：本次改动消除了重复实现，并逐字保留原有数值语义；这不等于已验证界面一致。现有测试不含任何布局像素断言，本次重构尚未做真机视觉确认。
 
 ## v1.0.1：首个公共发布版本
 
@@ -301,8 +309,10 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 ## 验证
 
 - 原课程解析的 20 项 Java 检查继续通过。
+- tests/ 下另有 4 个套件此前未接入 CI，现已补入 workflow：IdentityPolicyTest（47 项）、IdentityNavigationTest（59 项）、IdentityDiagnosticsTest（31 项）、SessionCookiesTest（202 项），合计 339 项断言，覆盖统一认证 URL 策略、导航防循环与诊断脱敏。
+- GitHub Actions（.github/workflows/gradle.yml）在 runner 上完成过一次构建并全部通过（commit 6bf3ba8）。CI 用 javac/java 直接运行 tests/ 下的套件，因为该套件未接入 Gradle 的 test source set；项目不带 Gradle Wrapper，workflow 改用 gradle/actions/setup-gradle 提供 Gradle 8.13。
 - RevisionTest 验证旧快照迁移、真实缓存保留和 60 种可用视口尺寸下的七列十二行边界。
-- APK 版本号 23 / 版本名 1.6.0，包名 cn.jhun.sanjiaohu；沿用 1.5.7 签名，可覆盖 1.5.7。
+- APK 版本号 32 / 版本名 y7c_0.1，包名 cn.jhun.sanjiaohu。1.0.1 公共发布版沿用 1.5.7 签名，可覆盖 1.5.7；本机用 build-local.ps1 在全新 -Work 目录构建的包会生成新密钥，无法覆盖安装上述版本，强行安装需先卸载，并会清除课表、成绩、自定义课程、背景与登录凭证。
 - 校历视口 116 项检查通过，覆盖横竖屏完整适应、四向旋转、缩放焦点和拖动边界；APK 内校历 JPG 与用户附件逐字节一致。
 - APK 不含 seed.json、学生成绩、账号或浏览器 Cookie，解析测试仅使用虚构数据。
 - 当前没有已连接安卓设备或已配置模拟器，尚未完成真机界面、登录和断网恢复测试。尺寸边界测试不等同于真机截图检查。
@@ -317,7 +327,7 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 
 Gradle 配置使用 AGP 8.13.0、compileSdk 36、minSdk 26、targetSdk 35。不附 Gradle Wrapper 二进制。直接构建不需要下载 Gradle 依赖。
 
-签名密钥沿用原构建中间目录的 development.keystore，不放在源码包内。保留密钥，后续版本才能覆盖安装。
+签名密钥是 build-local.ps1 在 -Work 目录内按需生成的 development.keystore，不放在源码包内。复用同一个 -Work 目录才能保留密钥，后续版本才能覆盖安装；换用新的 -Work 目录会生成新密钥。
 
 ```powershell
 javac -encoding UTF-8 -d test-classes app/src/main/java/cn/jhun/sanjiaohu/Course.java app/src/main/java/cn/jhun/sanjiaohu/CachePolicy.java app/src/main/java/cn/jhun/sanjiaohu/GridGeometry.java tests/CourseTest.java tests/RevisionTest.java
