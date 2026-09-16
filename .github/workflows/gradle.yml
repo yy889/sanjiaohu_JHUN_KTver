@@ -80,6 +80,43 @@ jobs:
             echo "::endgroup::"
           done
 
+      # Identity* and SessionCookies are plain Java mains as well. They were
+      # previously omitted here even though they cover the most sensitive
+      # logic: the unified-auth URL policy, the navigation loop guard and the
+      # diagnostic redaction rules.
+      - name: Run identity regression tests
+        run: |
+          set -euo pipefail
+          src=app/src/main/java/cn/jhun/sanjiaohu
+          mkdir -p test-classes-identity
+          javac -encoding UTF-8 -d test-classes-identity \
+            "$src/IdentityPolicy.java" \
+            "$src/IdentityNavigation.java" \
+            "$src/IdentityDiagnostics.java" \
+            tests/IdentityPolicyTest.java \
+            tests/IdentityNavigationTest.java \
+            tests/IdentityDiagnosticsTest.java
+          for t in IdentityPolicyTest IdentityNavigationTest IdentityDiagnosticsTest; do
+            echo "::group::$t"
+            java -cp test-classes-identity "cn.jhun.sanjiaohu.$t"
+            echo "::endgroup::"
+          done
+
+      # SessionCookiesTest compiles against minimal android.webkit stubs that
+      # live in tests/cookie-stubs as ordinary sources, so it needs no SDK jar.
+      # It uses its own output directory to keep those stub classes isolated.
+      - name: Run session cookie tests
+        run: |
+          set -euo pipefail
+          src=app/src/main/java/cn/jhun/sanjiaohu
+          mkdir -p test-classes-cookies
+          javac -encoding UTF-8 -d test-classes-cookies \
+            "$src/SessionCookies.java" \
+            tests/cookie-stubs/android/webkit/CookieManager.java \
+            tests/cookie-stubs/android/webkit/WebStorage.java \
+            tests/cookie-stubs/SessionCookiesTest.java
+          java -cp test-classes-cookies cn.jhun.sanjiaohu.SessionCookiesTest
+
       - name: Run Node adapter tests
         run: |
           set -euo pipefail
