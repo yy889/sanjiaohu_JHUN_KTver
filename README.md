@@ -1,13 +1,19 @@
-# 三角狐 y7c_0.1
+# 三角狐 y7c_0.2
 
 江汉大学个人课表应用，Android 8.0 及以上。 所有内容源自https://github.com/shiyuyu0w0/sanjiaohu_JHUN 请支持原始开发者!!!
+
+## y7c_0.2：版本号提升
+
+- 仅提升版本号：对外 versionName y7c_0.2，内部 versionCode 递增至 33。功能与 y7c_0.1 相同，无代码逻辑变更。
+- versionCode 必须递增：沿用 32 会被 Android 拒绝覆盖安装。
+- 签名说明：本机 build-local.ps1 的密钥生成在 -Work 目录内。复用同一 -Work 目录构建，则本包与之前的本机 y7c_0.1 包同密钥、可互相覆盖；但都不能覆盖 1.0.1 公共发布版（不同密钥），强行安装需先卸载并会清除课表、成绩、自定义课程、背景与登录凭证。
 
 ## y7c_0.1：共享 UI 工具类与深色模式开关
 
 - 新增 Ui.java，承载 7 个无状态视图工具方法（dp / column / row / weighted / space / place / shape）。改动前这些实现被逐份复制在 7 个类里：dp 重复 7 份、shape 5 份、column 4 份、row 3 份。
 - 调用类保留同名方法并在内部委托给 Ui。MainActivity 被另外 5 个类（CalibrationSheet、CourseEditor、ThemeColorSheet、CourseDetailSheet、UiSheet）持有并直接调用 a.dp() / a.shape()，保留同名方法后这些调用点无需改动。
 - 刻意逐字保留两处原有数值语义：LoginActivity.shape(int) 仍是固定圆角 16 的单参数形式（若误统一为双参数形式，登录页输入框与「登录」按钮会静默变成直角）；Ui.dp 仍是 density*value + 0.5f 后截断（不能改成 Math.round，其对负数舍入方向相反）。
-- 对外版本号 y7c_0.1，内部 versionCode 递增至 32（深色模式开关与 Ui 提取同属这一个尚未发布的版本，故未再次递增）。
+- 对外版本号 y7c_0.1，内部 versionCode 递增至 32（深色模式开关与 Ui 提取同属这一个当时尚未发布的版本，故未再次递增）。
 - 新增深色模式开关：「更多 → 外观 → 深色模式」，一个真实 Switch，选择保存在 settings 的 darkMode 布尔值里，重启后仍生效。
 - 引入 12 个语义颜色角色（sheetSurface / controlSurface / focusSurface / gridSurface / selectedSurface / outline / divider / rippleMask / wallpaperScrim / controlThumb / disabledTrack / error），13 个调用点改为读取角色而不再内联「向白混合」的浅色字面量。这是深色模式能成立的前提：任何一处漏改都会在深色下留下浅色块。
 - 新增 AppTheme.java 作为 Android 侧桥接：读取开关、生成配色，并统一设置状态栏、导航栏和窗口底色（含图标明暗极性）。窗口底色必须在代码里设——手动开关不能用 values-night 资源，否则系统深色与用户手动选择会互相矛盾。
@@ -320,7 +326,7 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 - tests/ 下另有 4 个套件此前未接入 CI，现已补入 workflow：IdentityPolicyTest（47 项）、IdentityNavigationTest（59 项）、IdentityDiagnosticsTest（31 项）、SessionCookiesTest（202 项），合计 339 项断言，覆盖统一认证 URL 策略、导航防循环与诊断脱敏。
 - GitHub Actions（.github/workflows/gradle.yml）已在 runner 上完成三次构建，全部 success。其中 main 的 33850f2 与 PR 的 9c2f6fc 两次包含新增的两个测试步骤，步骤级结论为 success：workflow 使用 set -euo pipefail，断言失败会令步骤非零退出，因此可确认「Run identity regression tests」与「Run session cookie tests」确实执行并通过，而非被跳过。CI 用 javac/java 直接运行 tests/ 下的套件，因为该套件未接入 Gradle 的 test source set；项目不带 Gradle Wrapper，workflow 改用 gradle/actions/setup-gradle 提供 Gradle 8.13。
 - RevisionTest 验证旧快照迁移、真实缓存保留和 60 种可用视口尺寸下的七列十二行边界。
-- APK 版本号 32 / 版本名 y7c_0.1，包名 cn.jhun.sanjiaohu。1.0.1 公共发布版沿用 1.5.7 签名，可覆盖 1.5.7；本机用 build-local.ps1 在全新 -Work 目录构建的包会生成新密钥，无法覆盖安装上述版本，强行安装需先卸载，并会清除课表、成绩、自定义课程、背景与登录凭证。
+- APK 版本号 33 / 版本名 y7c_0.2，包名 cn.jhun.sanjiaohu。1.0.1 公共发布版沿用 1.5.7 签名，可覆盖 1.5.7；本机用 build-local.ps1 在全新 -Work 目录构建的包会生成新密钥，无法覆盖安装上述版本，强行安装需先卸载，并会清除课表、成绩、自定义课程、背景与登录凭证。
 - 校历视口 116 项检查通过，覆盖横竖屏完整适应、四向旋转、缩放焦点和拖动边界；APK 内校历 JPG 与用户附件逐字节一致。
 - APK 不含 seed.json、学生成绩、账号或浏览器 Cookie，解析测试仅使用虚构数据。
 - 当前没有已连接安卓设备或已配置模拟器，尚未完成真机界面、登录和断网恢复测试。尺寸边界测试不等同于真机截图检查。

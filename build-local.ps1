@@ -4,7 +4,7 @@ param(
     [string]$Platform = 'android-36.1',
     [string]$BuildTools = '36.1.0',
     [string]$Work = "$PSScriptRoot/../../work/android-build",
-    [string]$Apk = "$PSScriptRoot/../Sanjiaohu-y7c_0.1.apk"
+    [string]$Apk = "$PSScriptRoot/../Sanjiaohu-y7c_0.2.apk"
 )
 $ErrorActionPreference = 'Stop'
 $tool = Join-Path $Sdk "build-tools/$BuildTools"
