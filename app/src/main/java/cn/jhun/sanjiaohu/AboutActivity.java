@@ -37,7 +37,8 @@ public final class AboutActivity extends Activity {
         TextView caption=text("觉得好用就打赏一杯咖啡吧",13,ThemePalette.readable(theme.muted,theme.entrySurface,4.5),false);caption.setGravity(Gravity.CENTER);caption.setLineSpacing(dp(3),1);sponsor.addView(caption,new LinearLayout.LayoutParams(-1,-2));content.addView(sponsor);gap(content,16);
         LinearLayout version=card();version.setOrientation(LinearLayout.HORIZONTAL);version.setGravity(Gravity.CENTER_VERTICAL);version.addView(text("版本号",15,theme.text,false),new LinearLayout.LayoutParams(0,-2,1));
         String current="y7c_0.1";try{current=getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(Exception ignored){}
-        version.addView(text(current.startsWith("v")?current:"v"+current,18,theme.deepAccent,true));content.addView(version);
+        boolean numericVersion=!current.isEmpty()&&Character.isDigit(current.charAt(0));
+        version.addView(text(numericVersion?"v"+current:current,18,theme.deepAccent,true));content.addView(version);
         setContentView(root);
     }
     LinearLayout column(){return Ui.column(this);}
