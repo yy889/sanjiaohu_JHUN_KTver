@@ -2,13 +2,18 @@
 
 江汉大学个人课表应用，Android 8.0 及以上。
 
-## y7c_0.1：提取共享 UI 工具类
+## y7c_0.1：共享 UI 工具类与深色模式开关
 
 - 新增 Ui.java，承载 7 个无状态视图工具方法（dp / column / row / weighted / space / place / shape）。改动前这些实现被逐份复制在 7 个类里：dp 重复 7 份、shape 5 份、column 4 份、row 3 份。
 - 调用类保留同名方法并在内部委托给 Ui。MainActivity 被另外 5 个类（CalibrationSheet、CourseEditor、ThemeColorSheet、CourseDetailSheet、UiSheet）持有并直接调用 a.dp() / a.shape()，保留同名方法后这些调用点无需改动。
 - 刻意逐字保留两处原有数值语义：LoginActivity.shape(int) 仍是固定圆角 16 的单参数形式（若误统一为双参数形式，登录页输入框与「登录」按钮会静默变成直角）；Ui.dp 仍是 density*value + 0.5f 后截断（不能改成 Math.round，其对负数舍入方向相反）。
-- 对外版本号 y7c_0.1，内部 versionCode 递增至 32。
-- 准确表述：本次改动消除了重复实现，并逐字保留原有数值语义；这不等于已验证界面一致。现有测试不含任何布局像素断言，本次重构尚未做真机视觉确认。
+- 对外版本号 y7c_0.1，内部 versionCode 递增至 32（深色模式开关与 Ui 提取同属这一个尚未发布的版本，故未再次递增）。
+- 新增深色模式开关：「更多 → 外观 → 深色模式」，一个真实 Switch，选择保存在 settings 的 darkMode 布尔值里，重启后仍生效。
+- 引入 12 个语义颜色角色（sheetSurface / controlSurface / focusSurface / gridSurface / selectedSurface / outline / divider / rippleMask / wallpaperScrim / controlThumb / disabledTrack / error），13 个调用点改为读取角色而不再内联「向白混合」的浅色字面量。这是深色模式能成立的前提：任何一处漏改都会在深色下留下浅色块。
+- 新增 AppTheme.java 作为 Android 侧桥接：读取开关、生成配色，并统一设置状态栏、导航栏和窗口底色（含图标明暗极性）。窗口底色必须在代码里设——手动开关不能用 values-night 资源，否则系统深色与用户手动选择会互相矛盾。
+- 浅色取值刻意沿用现有数字，因此引入语义角色本身不改变界面。两处需要说明：divider 与 outline 分开，因为原代码对「细分隔线（约 0.88）」和「真实边框（约 0.55）」本就用了两个不同数值，合并会让所有列表分隔线明显变深；原先服务于同一角色的多个近似值（0.86 / 0.88 / 0.90 / 0.94）统一取 0.90，四者同处近白色带，肉眼不可辨，但这确实是一次数值变化，故在此记录而非默不作声。
+- 主题无关的颜色刻意保留内联：色轮内部、赞助码的白色底板（二维码需要浅底才能扫描）、PorterDuff 剪裁遮罩、WallpaperStore 的图片铺白。
+- 准确表述：本版消除了重复实现并逐字保留原有数值语义；但**深色模式从未在真机上目视确认过**，仓库内的测试也不含任何布局像素断言，浅色外观「未重绘」是由数值推导而非截图像素比对得出。深色配色的扩展断言（2014 组）只在开发机上运行过，按「仓库仅收录应用代码」的约定未纳入提交。
 
 ## v1.0.1：首个公共发布版本
 
@@ -309,8 +314,11 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 ## 验证
 
 - 原课程解析的 20 项 Java 检查继续通过。
+- 仓库内的 ThemeTest 仍是单模式 1007 组，对本版新配色继续通过：正文与次要文字对比度、按钮与面板对比度、入口底色区分、课程卡片可读度。
+- 深色配色另在开发机上用扩展套件验证过：1007 浅 + 1007 深共 2014 组，额外断言错误色对比度、深浅两套文字在今日标记上的可读性、深浅模式必须产生不同底色与卡片，以及 overlay() 的 alpha 合成与全透明恒等。该扩展套件按「仓库仅收录应用代码」的约定未提交，因此**仓库内的 CI 不覆盖深色配色**。其中「语义角色必须区别于所在页面」一条只对 8 个真实主题色断言：当主题色接近纯白时，所有「向白混合」的角色都会与页面塌成同值，entrySurface 早有针对同一情形的对比度保护，故该不变量不能对全部随机主色成立。
+- 深色模式仅经代码层与配色断言验证，**未在真机或模拟器上目视确认**：本机既无已连接设备也无已配置模拟器。开关的持久化、切换后的重绘、状态栏图标极性以及壁纸遮罩均未经过实际渲染检查。
 - tests/ 下另有 4 个套件此前未接入 CI，现已补入 workflow：IdentityPolicyTest（47 项）、IdentityNavigationTest（59 项）、IdentityDiagnosticsTest（31 项）、SessionCookiesTest（202 项），合计 339 项断言，覆盖统一认证 URL 策略、导航防循环与诊断脱敏。
-- GitHub Actions（.github/workflows/gradle.yml）在 runner 上完成过一次构建并全部通过（commit 6bf3ba8）。CI 用 javac/java 直接运行 tests/ 下的套件，因为该套件未接入 Gradle 的 test source set；项目不带 Gradle Wrapper，workflow 改用 gradle/actions/setup-gradle 提供 Gradle 8.13。
+- GitHub Actions（.github/workflows/gradle.yml）已在 runner 上完成三次构建，全部 success。其中 main 的 33850f2 与 PR 的 9c2f6fc 两次包含新增的两个测试步骤，步骤级结论为 success：workflow 使用 set -euo pipefail，断言失败会令步骤非零退出，因此可确认「Run identity regression tests」与「Run session cookie tests」确实执行并通过，而非被跳过。CI 用 javac/java 直接运行 tests/ 下的套件，因为该套件未接入 Gradle 的 test source set；项目不带 Gradle Wrapper，workflow 改用 gradle/actions/setup-gradle 提供 Gradle 8.13。
 - RevisionTest 验证旧快照迁移、真实缓存保留和 60 种可用视口尺寸下的七列十二行边界。
 - APK 版本号 32 / 版本名 y7c_0.1，包名 cn.jhun.sanjiaohu。1.0.1 公共发布版沿用 1.5.7 签名，可覆盖 1.5.7；本机用 build-local.ps1 在全新 -Work 目录构建的包会生成新密钥，无法覆盖安装上述版本，强行安装需先卸载，并会清除课表、成绩、自定义课程、背景与登录凭证。
 - 校历视口 116 项检查通过，覆盖横竖屏完整适应、四向旋转、缩放焦点和拖动边界；APK 内校历 JPG 与用户附件逐字节一致。
