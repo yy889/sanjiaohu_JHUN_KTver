@@ -1,6 +1,6 @@
 # 三角狐 y7c_0.1
 
-江汉大学个人课表应用，Android 8.0 及以上。
+江汉大学个人课表应用，Android 8.0 及以上。 所有内容源自https://github.com/shiyuyu0w0/sanjiaohu_JHUN 请支持原始开发者!!!
 
 ## y7c_0.1：共享 UI 工具类与深色模式开关
 
