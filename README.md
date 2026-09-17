@@ -320,6 +320,8 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 ## 验证
 
 - 原课程解析的 20 项 Java 检查继续通过。
+- `Course` 迁移到 Kotlin 后，全部 18 个套件（12 Java + 6 Node）在未做任何修改的情况下继续通过，其中 RevisionTest 12544 项与 CustomCoursesTest 60 项重度使用 `Course` 与 `Schedule`。测试代码一字未改，这正是本次迁移行为等价的主要证据。
+- Kotlin 迁移的验证边界：Gradle/AGP/Kotlin 插件这条链路**未在开发机上验证**（本机 Gradle 无法启动），CI 是它第一次真正运行的地方。此外 `Course` 只是 39 个类中的第 1 个，`MainActivity`（508 行、含 WebView 认证状态机）**仍未做任何 Kotlin 验证**，且按既有结论不建议迁移——那是 1.6.1~1.6.7 修了 7 个版本才收敛的代码。
 - 仓库内的 ThemeTest 仍是单模式 1007 组，对本版新配色继续通过：正文与次要文字对比度、按钮与面板对比度、入口底色区分、课程卡片可读度。
 - 深色配色另在开发机上用扩展套件验证过：1007 浅 + 1007 深共 2014 组，额外断言错误色对比度、深浅两套文字在今日标记上的可读性、深浅模式必须产生不同底色与卡片，以及 overlay() 的 alpha 合成与全透明恒等。该扩展套件按「仓库仅收录应用代码」的约定未提交，因此**仓库内的 CI 不覆盖深色配色**。其中「语义角色必须区别于所在页面」一条只对 8 个真实主题色断言：当主题色接近纯白时，所有「向白混合」的角色都会与页面塌成同值，entrySurface 早有针对同一情形的对比度保护，故该不变量不能对全部随机主色成立。
 - 深色模式仅经代码层与配色断言验证，**未在真机或模拟器上目视确认**：本机既无已连接设备也无已配置模拟器。开关的持久化、切换后的重绘、状态栏图标极性以及壁纸遮罩均未经过实际渲染检查。
@@ -341,12 +343,24 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 
 Gradle 配置使用 AGP 8.13.0、compileSdk 36、minSdk 26、targetSdk 35。不附 Gradle Wrapper 二进制。直接构建不需要下载 Gradle 依赖。
 
+## Kotlin
+
+应用自本版起包含 Kotlin。首个迁移的是纯逻辑类 `Course`（原 `Course.java` 已删除），其余仍是 Java，两种语言可混编。
+
+- `build-local.ps1` 会自动查找 `app/src/main/java` 下的 `.kt` 并先跑 kotlinc，再让 javac 以 Kotlin 输出为 classpath 编译 Java；两条链路的产物一起 dex。
+- kotlinc 默认取自本机 Gradle 缓存中的 kotlin-compiler-embeddable 2.0.21（**版本已钉死**，因为该缓存同时存在 1.9.24，混用会以难以定位的方式失败）。没有该缓存时传 `-Kotlin <kotlinc 发行版目录>`。编译器**必须用 JDK 22 运行**——Kotlin 2.0.21 无法解析 JDK 25 的版本串（`IllegalArgumentException: 25.0.2`）。
+- 为保证 Java 调用点零改动，`Course` 的字段加了 `@JvmField`、静态方法加了 `@JvmStatic`：否则 Java 看到的会是 `getName()` / `Course.Companion.parse()`。`localId` 与 `term` 保持可空，以匹配 Java 侧的 `!= null` 判断与字面量比较。
+- **`kotlin-stdlib` 会被 dex 进 APK**（否则运行时崩在 `NoClassDefFoundError: kotlin/jvm/internal/Intrinsics`），实测 APK 由 2,471,599 字节增至 3,159,727 字节，**+688,128 字节（+27.8%）**。
+- Gradle 侧新增 `org.jetbrains.kotlin.android` 2.0.21 插件，使 CI 的 `:app:assembleDebug` 能编译 Kotlin。这一条**未在本机验证**：本机 Gradle 启动即失败（`Failed to load native library 'native-platform.dll'`），只有 CI 会跑到它。
+
 签名密钥是 build-local.ps1 在 -Work 目录内按需生成的 development.keystore，不放在源码包内。复用同一个 -Work 目录才能保留密钥，后续版本才能覆盖安装；换用新的 -Work 目录会生成新密钥。
 
 ```powershell
-javac -encoding UTF-8 -d test-classes app/src/main/java/cn/jhun/sanjiaohu/Course.java app/src/main/java/cn/jhun/sanjiaohu/CachePolicy.java app/src/main/java/cn/jhun/sanjiaohu/GridGeometry.java tests/CourseTest.java tests/RevisionTest.java
-java -cp test-classes cn.jhun.sanjiaohu.CourseTest
-java -cp test-classes cn.jhun.sanjiaohu.RevisionTest
+# Course 已是 Kotlin，所以先 kotlinc，再 javac；运行时要带 kotlin-stdlib。
+kotlinc -jvm-target 1.8 -classpath <kotlin-stdlib.jar> -d test-classes app/src/main/java/cn/jhun/sanjiaohu/Course.kt
+javac -encoding UTF-8 -cp "test-classes;<kotlin-stdlib.jar>" -d test-classes app/src/main/java/cn/jhun/sanjiaohu/CachePolicy.java app/src/main/java/cn/jhun/sanjiaohu/GridGeometry.java tests/CourseTest.java tests/RevisionTest.java
+java -cp "test-classes;<kotlin-stdlib.jar>" cn.jhun.sanjiaohu.CourseTest
+java -cp "test-classes;<kotlin-stdlib.jar>" cn.jhun.sanjiaohu.RevisionTest
 ```
 
 文字缩放采用 Android [TextView 自动字号](https://developer.android.com/develop/ui/views/text-and-emoji/autosizing-textview)。
