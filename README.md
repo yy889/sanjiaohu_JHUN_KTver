@@ -1,13 +1,19 @@
-# 三角狐 y7c_0.1
+# 三角狐 y7c_0.2
 
 江汉大学个人课表应用，Android 8.0 及以上。 所有内容源自https://github.com/shiyuyu0w0/sanjiaohu_JHUN 请支持原始开发者!!!
+
+## y7c_0.2：版本号提升
+
+- 仅提升版本号：对外 versionName y7c_0.2，内部 versionCode 递增至 33。功能与 y7c_0.1 相同，无代码逻辑变更。
+- versionCode 必须递增：沿用 32 会被 Android 拒绝覆盖安装。
+- 签名说明：本机 build-local.ps1 的密钥生成在 -Work 目录内。复用同一 -Work 目录构建，则本包与之前的本机 y7c_0.1 包同密钥、可互相覆盖；但都不能覆盖 1.0.1 公共发布版（不同密钥），强行安装需先卸载并会清除课表、成绩、自定义课程、背景与登录凭证。
 
 ## y7c_0.1：共享 UI 工具类与深色模式开关
 
 - 新增 Ui.java，承载 7 个无状态视图工具方法（dp / column / row / weighted / space / place / shape）。改动前这些实现被逐份复制在 7 个类里：dp 重复 7 份、shape 5 份、column 4 份、row 3 份。
 - 调用类保留同名方法并在内部委托给 Ui。MainActivity 被另外 5 个类（CalibrationSheet、CourseEditor、ThemeColorSheet、CourseDetailSheet、UiSheet）持有并直接调用 a.dp() / a.shape()，保留同名方法后这些调用点无需改动。
 - 刻意逐字保留两处原有数值语义：LoginActivity.shape(int) 仍是固定圆角 16 的单参数形式（若误统一为双参数形式，登录页输入框与「登录」按钮会静默变成直角）；Ui.dp 仍是 density*value + 0.5f 后截断（不能改成 Math.round，其对负数舍入方向相反）。
-- 对外版本号 y7c_0.1，内部 versionCode 递增至 32（深色模式开关与 Ui 提取同属这一个尚未发布的版本，故未再次递增）。
+- 对外版本号 y7c_0.1，内部 versionCode 递增至 32（深色模式开关与 Ui 提取同属这一个当时尚未发布的版本，故未再次递增）。
 - 新增深色模式开关：「更多 → 外观 → 深色模式」，一个真实 Switch，选择保存在 settings 的 darkMode 布尔值里，重启后仍生效。
 - 引入 12 个语义颜色角色（sheetSurface / controlSurface / focusSurface / gridSurface / selectedSurface / outline / divider / rippleMask / wallpaperScrim / controlThumb / disabledTrack / error），13 个调用点改为读取角色而不再内联「向白混合」的浅色字面量。这是深色模式能成立的前提：任何一处漏改都会在深色下留下浅色块。
 - 新增 AppTheme.java 作为 Android 侧桥接：读取开关、生成配色，并统一设置状态栏、导航栏和窗口底色（含图标明暗极性）。窗口底色必须在代码里设——手动开关不能用 values-night 资源，否则系统深色与用户手动选择会互相矛盾。
@@ -314,13 +320,15 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 ## 验证
 
 - 原课程解析的 20 项 Java 检查继续通过。
+- `Course` 迁移到 Kotlin 后，全部 18 个套件（12 Java + 6 Node）在未做任何修改的情况下继续通过，其中 RevisionTest 12544 项与 CustomCoursesTest 60 项重度使用 `Course` 与 `Schedule`。测试代码一字未改，这正是本次迁移行为等价的主要证据。
+- Kotlin 迁移的验证边界：Gradle/AGP/Kotlin 插件这条链路**未在开发机上验证**（本机 Gradle 无法启动），CI 是它第一次真正运行的地方。此外 `Course` 只是 39 个类中的第 1 个，`MainActivity`（508 行、含 WebView 认证状态机）**仍未做任何 Kotlin 验证**，且按既有结论不建议迁移——那是 1.6.1~1.6.7 修了 7 个版本才收敛的代码。
 - 仓库内的 ThemeTest 仍是单模式 1007 组，对本版新配色继续通过：正文与次要文字对比度、按钮与面板对比度、入口底色区分、课程卡片可读度。
 - 深色配色另在开发机上用扩展套件验证过：1007 浅 + 1007 深共 2014 组，额外断言错误色对比度、深浅两套文字在今日标记上的可读性、深浅模式必须产生不同底色与卡片，以及 overlay() 的 alpha 合成与全透明恒等。该扩展套件按「仓库仅收录应用代码」的约定未提交，因此**仓库内的 CI 不覆盖深色配色**。其中「语义角色必须区别于所在页面」一条只对 8 个真实主题色断言：当主题色接近纯白时，所有「向白混合」的角色都会与页面塌成同值，entrySurface 早有针对同一情形的对比度保护，故该不变量不能对全部随机主色成立。
 - 深色模式仅经代码层与配色断言验证，**未在真机或模拟器上目视确认**：本机既无已连接设备也无已配置模拟器。开关的持久化、切换后的重绘、状态栏图标极性以及壁纸遮罩均未经过实际渲染检查。
 - tests/ 下另有 4 个套件此前未接入 CI，现已补入 workflow：IdentityPolicyTest（47 项）、IdentityNavigationTest（59 项）、IdentityDiagnosticsTest（31 项）、SessionCookiesTest（202 项），合计 339 项断言，覆盖统一认证 URL 策略、导航防循环与诊断脱敏。
 - GitHub Actions（.github/workflows/gradle.yml）已在 runner 上完成三次构建，全部 success。其中 main 的 33850f2 与 PR 的 9c2f6fc 两次包含新增的两个测试步骤，步骤级结论为 success：workflow 使用 set -euo pipefail，断言失败会令步骤非零退出，因此可确认「Run identity regression tests」与「Run session cookie tests」确实执行并通过，而非被跳过。CI 用 javac/java 直接运行 tests/ 下的套件，因为该套件未接入 Gradle 的 test source set；项目不带 Gradle Wrapper，workflow 改用 gradle/actions/setup-gradle 提供 Gradle 8.13。
 - RevisionTest 验证旧快照迁移、真实缓存保留和 60 种可用视口尺寸下的七列十二行边界。
-- APK 版本号 32 / 版本名 y7c_0.1，包名 cn.jhun.sanjiaohu。1.0.1 公共发布版沿用 1.5.7 签名，可覆盖 1.5.7；本机用 build-local.ps1 在全新 -Work 目录构建的包会生成新密钥，无法覆盖安装上述版本，强行安装需先卸载，并会清除课表、成绩、自定义课程、背景与登录凭证。
+- APK 版本号 33 / 版本名 y7c_0.2，包名 cn.jhun.sanjiaohu。1.0.1 公共发布版沿用 1.5.7 签名，可覆盖 1.5.7；本机用 build-local.ps1 在全新 -Work 目录构建的包会生成新密钥，无法覆盖安装上述版本，强行安装需先卸载，并会清除课表、成绩、自定义课程、背景与登录凭证。
 - 校历视口 116 项检查通过，覆盖横竖屏完整适应、四向旋转、缩放焦点和拖动边界；APK 内校历 JPG 与用户附件逐字节一致。
 - APK 不含 seed.json、学生成绩、账号或浏览器 Cookie，解析测试仅使用虚构数据。
 - 当前没有已连接安卓设备或已配置模拟器，尚未完成真机界面、登录和断网恢复测试。尺寸边界测试不等同于真机截图检查。
@@ -335,12 +343,24 @@ java -cp test-classes cn.jhun.sanjiaohu.ThemeTest
 
 Gradle 配置使用 AGP 8.13.0、compileSdk 36、minSdk 26、targetSdk 35。不附 Gradle Wrapper 二进制。直接构建不需要下载 Gradle 依赖。
 
+## Kotlin
+
+应用自本版起包含 Kotlin。首个迁移的是纯逻辑类 `Course`（原 `Course.java` 已删除），其余仍是 Java，两种语言可混编。
+
+- `build-local.ps1` 会自动查找 `app/src/main/java` 下的 `.kt` 并先跑 kotlinc，再让 javac 以 Kotlin 输出为 classpath 编译 Java；两条链路的产物一起 dex。
+- kotlinc 默认取自本机 Gradle 缓存中的 kotlin-compiler-embeddable 2.0.21（**版本已钉死**，因为该缓存同时存在 1.9.24，混用会以难以定位的方式失败）。没有该缓存时传 `-Kotlin <kotlinc 发行版目录>`。编译器**必须用 JDK 22 运行**——Kotlin 2.0.21 无法解析 JDK 25 的版本串（`IllegalArgumentException: 25.0.2`）。
+- 为保证 Java 调用点零改动，`Course` 的字段加了 `@JvmField`、静态方法加了 `@JvmStatic`：否则 Java 看到的会是 `getName()` / `Course.Companion.parse()`。`localId` 与 `term` 保持可空，以匹配 Java 侧的 `!= null` 判断与字面量比较。
+- **`kotlin-stdlib` 会被 dex 进 APK**（否则运行时崩在 `NoClassDefFoundError: kotlin/jvm/internal/Intrinsics`），实测 APK 由 2,471,599 字节增至 3,159,727 字节，**+688,128 字节（+27.8%）**。
+- Gradle 侧新增 `org.jetbrains.kotlin.android` 2.0.21 插件，使 CI 的 `:app:assembleDebug` 能编译 Kotlin。这一条**未在本机验证**：本机 Gradle 启动即失败（`Failed to load native library 'native-platform.dll'`），只有 CI 会跑到它。
+
 签名密钥是 build-local.ps1 在 -Work 目录内按需生成的 development.keystore，不放在源码包内。复用同一个 -Work 目录才能保留密钥，后续版本才能覆盖安装；换用新的 -Work 目录会生成新密钥。
 
 ```powershell
-javac -encoding UTF-8 -d test-classes app/src/main/java/cn/jhun/sanjiaohu/Course.java app/src/main/java/cn/jhun/sanjiaohu/CachePolicy.java app/src/main/java/cn/jhun/sanjiaohu/GridGeometry.java tests/CourseTest.java tests/RevisionTest.java
-java -cp test-classes cn.jhun.sanjiaohu.CourseTest
-java -cp test-classes cn.jhun.sanjiaohu.RevisionTest
+# Course 已是 Kotlin，所以先 kotlinc，再 javac；运行时要带 kotlin-stdlib。
+kotlinc -jvm-target 1.8 -classpath <kotlin-stdlib.jar> -d test-classes app/src/main/java/cn/jhun/sanjiaohu/Course.kt
+javac -encoding UTF-8 -cp "test-classes;<kotlin-stdlib.jar>" -d test-classes app/src/main/java/cn/jhun/sanjiaohu/CachePolicy.java app/src/main/java/cn/jhun/sanjiaohu/GridGeometry.java tests/CourseTest.java tests/RevisionTest.java
+java -cp "test-classes;<kotlin-stdlib.jar>" cn.jhun.sanjiaohu.CourseTest
+java -cp "test-classes;<kotlin-stdlib.jar>" cn.jhun.sanjiaohu.RevisionTest
 ```
 
 文字缩放采用 Android [TextView 自动字号](https://developer.android.com/develop/ui/views/text-and-emoji/autosizing-textview)。

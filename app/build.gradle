@@ -1,7 +1,13 @@
-plugins { id 'com.android.application' }
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
 android {
     namespace 'cn.jhun.sanjiaohu'
     compileSdk 36
-    defaultConfig { applicationId 'cn.jhun.sanjiaohu'; minSdk 26; targetSdk 35; versionCode 32; versionName 'y7c_0.1' }
+    defaultConfig { applicationId 'cn.jhun.sanjiaohu'; minSdk 26; targetSdk 35; versionCode 33; versionName 'y7c_0.2' }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    // Must match compileOptions above or AGP fails its jvm-target validation.
+    // Pinned to the same Kotlin the local build-local.ps1 compiles with.
+    kotlinOptions { jvmTarget = '1.8' }
 }
