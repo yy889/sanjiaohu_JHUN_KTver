@@ -4,7 +4,7 @@ param(
     [string]$Platform = 'android-36.1',
     [string]$BuildTools = '36.1.0',
     [string]$Work = "$PSScriptRoot/../../work/android-build",
-    [string]$Apk = "$PSScriptRoot/../Sanjiaohu-y7c_0.2.apk",
+    [string]$Apk = "$PSScriptRoot/../Sanjiaohu-y7c_0.3.2.apk",
     # Kotlin. Leave both empty to use the compiler that already sits in the
     # Gradle cache (no download); pass -Kotlin with a kotlinc distribution for
     # machines without that cache, which is what CI does.

@@ -106,16 +106,45 @@ jobs:
           set -euo pipefail
           src=app/src/main/java/cn/jhun/sanjiaohu
           mkdir -p test-classes-identity
+          # PaymentNavigation is compiled here because IdentityPolicyTest asserts
+          # its Alipay hand-off rules; leaving it out fails the whole suite.
           javac -encoding UTF-8 -d test-classes-identity \
             "$src/IdentityPolicy.java" \
             "$src/IdentityNavigation.java" \
             "$src/IdentityDiagnostics.java" \
+            "$src/PaymentNavigation.java" \
             tests/IdentityPolicyTest.java \
             tests/IdentityNavigationTest.java \
             tests/IdentityDiagnosticsTest.java
           for t in IdentityPolicyTest IdentityNavigationTest IdentityDiagnosticsTest; do
             echo "::group::$t"
             java -cp test-classes-identity "cn.jhun.sanjiaohu.$t"
+            echo "::endgroup::"
+          done
+
+      # ElectricityStore touches android.content.Context (it reads meters.json
+      # from the app's private directory), so the shared Context stub from
+      # tests/context-stubs is compiled alongside it. The rest of the
+      # electricity and physics-lab logic is pure Java and needs no SDK jar.
+      - name: Run electricity and physics lab tests
+        run: |
+          set -euo pipefail
+          src=app/src/main/java/cn/jhun/sanjiaohu
+          mkdir -p test-classes-electricity
+          javac -encoding UTF-8 -d test-classes-electricity \
+            "$src/ElectricityMeter.java" \
+            "$src/ElectricityApi.java" \
+            "$src/ElectricityStore.java" \
+            "$src/PhysicsLabPolicy.java" \
+            tests/context-stubs/android/content/Context.java \
+            tests/ElectricityMeterTest.java \
+            tests/ElectricityApiTest.java \
+            tests/ElectricityStoreTest.java \
+            tests/PhysicsLabPolicyTest.java
+          for t in ElectricityMeterTest ElectricityApiTest ElectricityStoreTest \
+                   PhysicsLabPolicyTest; do
+            echo "::group::$t"
+            java -cp test-classes-electricity "cn.jhun.sanjiaohu.$t"
             echo "::endgroup::"
           done
 

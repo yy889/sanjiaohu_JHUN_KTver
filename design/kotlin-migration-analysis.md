@@ -109,7 +109,7 @@ long deadline;
 
 `$sources` 只收集 `-Filter '*.java'`（第 27 行）。要用 Kotlin，必须插入 `kotlinc` 编译步骤，并解决：Kotlin 编译需要先有 Java 类、Java 编译又需要先有 Kotlin 类时的**联合编译顺序**问题；`core-lambda-stubs.jar` 这类 Java 8 兼容技巧在 Kotlin 下不再适用。
 
-**更关键的是环境事实**（已实测）：本机 **`C:\Program Files\Android\Android Studio\jbr` 不存在**，`C:\Users\shaoh\AppData\Local\Android\Sdk` 也不存在。也就是说**当前这台机器上没有可用的 Android SDK 和 JDK**，`build-local.ps1` 现在就无法运行——你们一直是在别处构建的。所以"改造成 Kotlin 构建"这件事，本地既无法验证也无法调试。
+**更关键的是环境事实**（已实测）：本机 **`C:\Program Files\Android\Android Studio\jbr` 不存在**，`%LOCALAPPDATA%\Android\Sdk` 也不存在。也就是说**当前这台机器上没有可用的 Android SDK 和 JDK**，`build-local.ps1` 现在就无法运行——你们一直是在别处构建的。所以"改造成 Kotlin 构建"这件事，本地既无法验证也无法调试。
 
 **P0-2：测试集依赖 `javac` 直接编译源码，Kotlin 类无法这样测。**
 

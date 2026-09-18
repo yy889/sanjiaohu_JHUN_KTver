@@ -28,6 +28,42 @@ public final class IdentityPolicyTest {
         check(IdentityPolicy.auth(IdentityPolicy.LOGIN.replace("https:","http:")));
         check(IdentityPolicy.allowed(IdentityPolicy.LOGIN.replace("https:","http:")));
         check(!IdentityPolicy.auth("http://authserver.jhun.edu.cn/authserver/login?service=http%3A%2F%2Fevil.invalid"));
+        // ---- 用电缴费/电费查询新增的源白名单 ----
+        check(IdentityPolicy.auth(IdentityPolicy.ELECTRICITY_LOGIN));
+        check(IdentityPolicy.allowed(IdentityPolicy.ELECTRICITY_SERVICE));
+        check(IdentityPolicy.electricity(IdentityPolicy.ELECTRICITY_SERVICE));
+        check(IdentityPolicy.electricity("https://h5cloud.17wanxiao.com:18443/CloudPayment/user/getRoomState.do"));
+        check(IdentityPolicy.electricity("https://h5cloud.17wanxiao.com:18443/CloudPayment/bill/selectPayProject.do"));
+        check(IdentityPolicy.electricity("https://open.17wanxiao.com/authorize"));
+        check(IdentityPolicy.electricity("https://wapnew.17wanxiao.com/after"));
+        // 电表接口所在的源必须被认作 cloudPayment（带 18443 端口）
+        check(IdentityPolicy.cloudPayment("https://h5cloud.17wanxiao.com:18443/CloudPayment/bill/type.do"));
+        // 少一个端口就不是那个源
+        check(!IdentityPolicy.cloudPayment("https://h5cloud.17wanxiao.com/CloudPayment/bill/type.do"));
+        check(!IdentityPolicy.allowed("https://h5cloud.17wanxiao.com/CloudPayment/bill/type.do"));
+        // 其他 17wanxiao 子域不在允许之列（只有 hub 是 CAS service 目标）
+        check(!IdentityPolicy.allowed("https://evil.17wanxiao.com/bsacs/light.action"));
+        check(!IdentityPolicy.allowed("https://17wanxiao.com.evil.invalid/"));
+        // 支付宝 H5 是导航目标，不是凭据目标
+        check(!IdentityPolicy.allowed("https://mclient.alipay.com/"));
+        check(PaymentNavigation.alipayWeb("https://mclient.alipay.com/h5.htm"));
+        check(!PaymentNavigation.alipayWeb("http://mclient.alipay.com/h5.htm"));
+        check(!PaymentNavigation.alipayWeb("https://mclient.alipay.com:8443/h5.htm"));
+        check(!PaymentNavigation.alipayWeb("https://u:p@mclient.alipay.com/h5.htm"));
+        check(!PaymentNavigation.alipayWeb("https://mclient.alipay.com.evil.invalid/h5.htm"));
+        // intent:// 只在 scheme/package 都受控时才放行，其余一律丢弃
+        check(PaymentNavigation.alipayLink("intent://platformapi/startapp?appId=20000056#Intent;scheme=alipays;package=com.eg.android.AlipayGphone;end")!=null);
+        check(PaymentNavigation.alipayLink("intent://platformapi/startapp?appId=1#Intent;scheme=alipays;package=com.evil.pay;end")==null);
+        check(PaymentNavigation.alipayLink("intent://platformapi/startapp?appId=1#Intent;scheme=alipays;package=com.eg.android.AlipayGphone;SEL;end")==null);
+        check(PaymentNavigation.alipayLink("intent://platformapi/startapp?appId=1#Intent;scheme=alipays;package=com.eg.android.AlipayGphone;action=android.intent.action.VIEW;end")!=null);
+        check(PaymentNavigation.alipayLink("https://evil.invalid/startapp")==null);
+        check(PaymentNavigation.alipayLink("alipays://platformapi/startapp?appId=1")!=null);
+        // 隐藏 iframe 只能在支付宝自己的 H5 源里发起
+        check(PaymentNavigation.sourceAllowed(true,"https://mclient.alipay.com/h5.htm",false,"GET"));
+        check(!PaymentNavigation.sourceAllowed(true,"https://evil.invalid/",false,"GET"));
+        check(!PaymentNavigation.sourceAllowed(false,"https://mclient.alipay.com/h5.htm",false,"GET"));
+        check(!PaymentNavigation.sourceAllowed(true,"https://mclient.alipay.com/h5.htm",false,"POST"));
+        check(!PaymentNavigation.sourceAllowed(true,"https://evil.invalid/",true,"GET"));
         System.out.println("Identity URL policy: "+checks+" checks passed");
     }
 }

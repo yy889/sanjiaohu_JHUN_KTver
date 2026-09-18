@@ -8,7 +8,7 @@
 
 | 组件 | 上次 | 本次 | 路径 |
 |---|---|---|---|
-| Android SDK | ❌ 不存在 | ✅ | `C:\Users\shaoh\AppData\Local\Android\Sdk` |
+| Android SDK | ❌ 不存在 | ✅ | `%LOCALAPPDATA%\Android\Sdk` |
 | Android Studio | ❌ 不存在 | ✅ | `C:\Program Files\Android\Android Studio` |
 | `adb` | ❌ NOT FOUND | ✅ | `<Sdk>\platform-tools\adb.exe`（v1.0.41） |
 
