@@ -86,6 +86,12 @@ public final class MoreMenu {
             else if(id==7){c.drawRoundRect(new RectF(3,6,16,20),3,3,pen);c.drawRoundRect(new RectF(8,3,21,17),3,3,pen);c.drawLine(10,8,15,13,pen);c.drawLine(10,12,12,14,pen);}
             else if(id==5){c.drawRoundRect(new RectF(3,4,21,20),2,2,pen);c.drawCircle(8,9,1.4f,pen);Path p=new Path();p.moveTo(4,18);p.lineTo(10,12);p.lineTo(14,16);p.lineTo(17,13);p.lineTo(20,16);c.drawPath(p,pen);}
             else if(id==17){Path p=new Path();p.addCircle(11.5f,12,7,Path.Direction.CW);p.addCircle(15,9.5f,6.5f,Path.Direction.CCW);Paint fill=new Paint(pen);fill.setStyle(Paint.Style.FILL);c.drawPath(p,fill);}
+            // 电费查询：闪电
+            else if(id==18){Path p=new Path();p.moveTo(13,2);p.lineTo(5,13);p.lineTo(11,13);p.lineTo(10,22);p.lineTo(19,10);p.lineTo(13,10);p.close();c.drawPath(p,pen);}
+            // 用电缴费：纸币 + 中间圆圈
+            else if(id==19){c.drawRoundRect(new RectF(2,6,22,18),2,2,pen);c.drawCircle(12,12,3.4f,pen);c.drawPoint(5.5f,9.5f,pen);c.drawPoint(18.5f,14.5f,pen);}
+            // 大物实验报告：锥形瓶
+            else if(id==20){Path p=new Path();p.moveTo(9,3);p.lineTo(15,3);p.moveTo(10,3);p.lineTo(10,9);p.lineTo(5,19);p.lineTo(19,19);p.lineTo(14,9);p.lineTo(14,3);c.drawPath(p,pen);c.drawLine(7,15,17,15,pen);}
             else {c.drawCircle(12,8,4,pen);c.drawArc(new RectF(4,14,20,28),180,180,false,pen);}
             c.restore();
         }

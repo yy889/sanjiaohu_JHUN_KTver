@@ -1,6 +1,62 @@
-# 三角狐 y7c_0.2
+# 三角狐 y7c_0.3.2
 
 江汉大学个人课表应用，Android 8.0 及以上。 所有内容源自https://github.com/shiyuyu0w0/sanjiaohu_JHUN 请支持原始开发者!!!
+
+## y7c_0.3.2：版本号提升
+
+- 仅提升版本号：对外 versionName `y7c_0.3.2`，内部 versionCode 递增至 **36**。功能与 y7c_0.3.1 相同，无代码逻辑变更。
+- versionCode 必须递增：沿用 35 会被 Android 拒绝覆盖安装。
+
+## y7c_0.3.1：首页入口并排
+
+- 「大物实验报告」与「用电缴费」改为**同一排并排**显示（各占一半宽度）。改动前两者各自独占一排、右半留空，首页被拉长。
+- 顶部 6 个入口因此排成 3 排，每排 2 个，与前面的「自定义课程 / 成绩查看」「校园地图 / 校历」保持一致的栅格。
+- 顺带把入口标题与副标题设为单行 + 省略号：标题变长（如「大物实验报告」6 个字）时不再折行把卡片撑高、导致同一排两张卡片高度不一致。此项对全部 8 个入口生效，短标题（「校历」「成绩查看」等）观感不变。
+- 对外 versionName `y7c_0.3.1`，内部 versionCode 递增至 **35**。除上述布局外，功能与 y7c_0.3 相同。
+- **未验证**：本机无 Android 设备，上述并排效果与「单行不折行」的实际观感未经真机确认；窄屏上标题是否需要缩短（如「大物实验」）也需实机判断。
+
+## y7c_0.3：原生电费查询 + 大物实验报告
+
+本版做了两件互不相关的事：新增**原生电费查询**，以及把**大物实验报告**入口从另一条分支移植过来。
+
+### 一、原生电费查询
+
+- 首页新增「电费查询」入口，打开一个新的原生页面，直接显示宿舍**灯光**与**空调**两块电表的剩余电量（单位：度），余额低于阈值时标红告警。
+- 同时把首页的「网上报修」与「用电缴费」拆成两个独立入口：前者是后勤报修，后者是 17wanxiao 缴费网页。改动前只有「网上报修」一项，而 `IdentityActivity` 里其实早已存在 `electricity` 分支却无人调用 —— 现在它有了入口。
+- 新增 6 个类：`ElectricityActivity`（界面）、`ElectricityApi`（查询接口）、`ElectricityMeter`（表号规律与 39 栋楼对照表）、`ElectricityStore`（号段表读写）、`ElectricityCookie`（会话取用）、`PaymentNavigation`（外部应用跳转策略，从另一条分支取回，本仓库此前缺失而 `IdentityActivity` 需要它）。
+- 顺带补齐 `IdentityPolicy` / `IdentityDiagnostics` / `IdentityActivity` 的用电缴费支持（源白名单、支付宝跳转、`LENIENT_URL` 等诊断事件）。这些改动此前只存在于另一条分支，本仓库的 `electricity` 分支是**死代码**。
+
+**数据来源**：编号规律、接口地址与楼栋对照表**不是**本版推导的，而是移植自一个已实测的桌面版电费查询程序（`D:\dsh_prj\eve_all`，Kotlin + JavaFX）。被实测确认、因此本版照抄的部分：
+
+- 接口 `GET https://h5cloud.17wanxiao.com:18443/CloudPayment/user/getRoomState.do?payProId=7033&schoolcode=1862&businesstype=2&roomverify=<表号>`，返回 `quantity` 的单位是**度**而不是元。
+- 表号格式 `大分类-编号--楼层-房间`，**中间是两个连字符**；写成单个会返回 `FAIL`。灯光 `3-3--4-407`、空调 `1-15--45-407` 是实测值。
+- **照明与空调是两套独立编号**，同一栋楼两边 id 不同（北区3舍：照明 3、空调 15），不能按楼号互推。
+- 空调第三段按楼按层不同，只有北区3舍（42~47）实测齐全；其余楼的号段需在 `meters.json` 里补，未配置的楼层界面会提示「未配置」而**不发出无效请求**。
+- `quantity` 读数为 `0.0` 是**真实的没电了**（`returncode=100`、`canbuy=true`），不是查询失败；`returncode=FAIL` 才是表号不对。这两种情况在界面和测试里被分开处理。
+- 非 JSON 的「系统繁忙」文本含义是**会话失效**，绝不能当成余额为零。
+
+**与桌面版的两处刻意不同**：
+
+1. **不做原生密码登录。** 桌面版 `CasLogin.kt` 会在本机用 AES 加密密码替用户提交 CAS 登录。手机上应用内已有正规路径：用户在 WebView 里亲自完成一次「用电缴费」登录，会话 Cookie 落在系统 `CookieManager` 中，本页面只**读取**那条 `SESSION`。App 不接触、不保存统一认证密码。
+2. **界面按 Android 惯例重写。** JavaFX 在 Android 上不存在，因此只移植了信息结构与配色语义（空调蓝 `#2f6fed`、灯光橙 `#f08a24`、左色条、状态胶囊、低余额告警条），颜色一律走既有的 `ThemePalette` 语义角色，因此**深色模式自动成立**。
+
+### 二、大物实验报告
+
+- 首页新增「大物实验报告」入口，打开内置浏览器加载实验报告站点 `wlxpk.jhun.edu.cn:6603`，含**文件上传**支持（表单的「选择文件」按钮依赖 WebView 的 `onShowFileChooser` 回调，缺了它就是没反应）。
+- `network_security_config.xml` 新增 `wlxpk.jhun.edu.cn`：该站点是**明文 HTTP**，且只允许这一个确切域名，没有放宽全局明文限制。
+- 新增 `PhysicsLabPolicy`（2 个类：策略 + 界面）与 `tests/PhysicsLabPolicyTest`。**来源与电费查询不同**：这一部分是从 `sanjiaohu_JHUN`（另一条分支，提交 `7ee51a9`）移植的，`PhysicsLabPolicyTest` 的 37 项断言逐条照搬，未作增删。
+- 保留该策略原有的收紧点：只允许校园网内的实验报告站点（**http/https 两种协议都必须带 6603 端口**）、学校 HTTPS 单点登录跳转、以及网络配置已放行的三个确定明文域名。`jwxt` 的 HTTP、非 6603 端口、带用户信息（`user:pass@`）、`javascript:` / `intent:` 一律拒绝。
+- 保留 `pickerType` 那个易踩的坑：有些表单把裸扩展名（`.docx`）当 accept 值传进来，选择器拿它匹配不到任何 MIME 类型、会显示成空列表，因此整个列表放宽为 `*/*`。
+
+### 版本与验证状况
+
+- 对外 versionName `y7c_0.3`，内部 versionCode 递增至 **34**（沿用 33 会被 Android 拒绝覆盖安装）。签名与构建方式不变。- 通过：`build-local.ps1` 构建成功，APK 用 v2/v3 方案签名验证通过，`application-label` 为 `三角狐`（未出现清单编码损坏），`ElectricityActivity`、`PhysicsLabActivity`、`PhysicsLabPolicy` 等类确认已打进 `classes.dex`，两个 Activity 都已在 APK 清单中注册。
+- 通过：**16 个 Java 套件 + 6 个 Node 套件全部通过**，既有 14 个套件**零回归**（各项断言数与改动前逐项一致）。新增 346 项：`ElectricityMeterTest` 256、`ElectricityApiTest` 39、`PhysicsLabPolicyTest` 37、`ElectricityStoreTest` 14；`IdentityPolicyTest` 由 47 增至 76。
+- **未验证：本机没有 Android 设备、没有 AVD、没有 system-image，因此上述全部为编译期与逻辑层检查，两个新页面都从未在真机上目视确认过。**
+- **未验证（大物实验报告尤其如此）**：文件上传整条链路 —— WebView 的 `onShowFileChooser` 是否被该站点真实触发、`params.createIntent()` 在真机上能否唤起可用的选择器、选中的文件能否真正提交到服务器 —— **全部依赖真机**，本机一项都没测过。另一条分支的提交说明写的就是「修复大物实验无法上传文件」，而该修复是否在真机生效，本次移植**没有、也无法**重新确认。
+- **未验证（电费查询）**：`CookieManager` 能否真实取到 `SESSION`、`HttpURLConnection` 能否连通 `h5cloud:18443`。该站点证书链在部分环境不可信，桌面版为此放行了全部证书，**本版没有放行**，因此若真机上 TLS 校验失败会报网络错误。
+- **未验证：两个接口都没有被本版重新实测过。** 电费的接口与表号结论出自桌面程序 `eve_all`；大物实验的站点地址出自另一条分支。若学校侧有变，以真机结果为准。
+- 本版**没有**新增任何自动轮询：电费页面进入时查一次、改变楼/层/房各查一次。桌面版默认 30 分钟自动刷新与 1500ms 请求间隔**未移植**（改楼/层/房时的两次请求之间保留了 1200ms 间隔以防风控）。因此本版的请求频率低于桌面版。
 
 ## y7c_0.2：版本号提升
 

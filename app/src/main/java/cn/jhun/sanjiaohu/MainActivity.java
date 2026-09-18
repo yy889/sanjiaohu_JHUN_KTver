@@ -385,14 +385,15 @@ public class MainActivity extends Activity {
         LinearLayout top=row();top.addView(homeEntry("自定义课程","添加与管理",8,()->showCustomCourses()),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams spacer=new LinearLayout.LayoutParams(0,-2,1);spacer.leftMargin=dp(12);top.addView(homeEntry("成绩查看","按学期查看",11,()->openGrades()),spacer);content.addView(top);
         space(content,12);
         LinearLayout campus=row();campus.addView(homeEntry("校园地图","探索校园",13,()->openCampusMap()),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams calendarSpace=new LinearLayout.LayoutParams(0,-2,1);calendarSpace.leftMargin=dp(12);campus.addView(homeEntry("校历","2026—2027 学年",14,()->startActivity(new Intent(this,AcademicCalendarActivity.class))),calendarSpace);content.addView(campus);
-        space(content,12);LinearLayout services=row();services.addView(homeEntry("网上报修","校园后勤服务",15,()->openIdentity(true)),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams emptySpace=new LinearLayout.LayoutParams(0,1,1);emptySpace.leftMargin=dp(12);services.addView(new View(this),emptySpace);content.addView(services);return content;
+        space(content,12);LinearLayout services=row();services.addView(homeEntry("电费查询","宿舍灯光 / 空调余额",18,()->openElectricity()),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams repairSpace=new LinearLayout.LayoutParams(0,-2,1);repairSpace.leftMargin=dp(12);services.addView(homeEntry("网上报修","校园后勤服务",15,()->openIdentity(true)),repairSpace);content.addView(services);
+        space(content,12);LinearLayout payment=row();payment.addView(homeEntry("用电缴费","校园用电服务",19,()->openPayment()),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams labSpace=new LinearLayout.LayoutParams(0,-2,1);labSpace.leftMargin=dp(12);payment.addView(homeEntry("大物实验报告","需连接校园网",20,()->openPhysicsLab()),labSpace);content.addView(payment);return content;
     }
     void openCampusMap(){
         startActivity(new Intent(this,CampusMapActivity.class));
     }
     View homeEntry(String title,String subtitle,int iconId,Runnable action){
         LinearLayout entry=column();entry.setPadding(dp(16),dp(14),dp(16),dp(14));entry.setMinimumHeight(dp(112));entry.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((PRIMARY&0xffffff)|0x22000000),shape(palette.entrySurface,20),shape(palette.rippleMask,20)));
-        MoreMenu.Icon icon=new MoreMenu.Icon(this,iconId,palette.deepAccent);entry.addView(icon,new LinearLayout.LayoutParams(dp(32),dp(32)));space(entry,8);entry.addView(label(title,15,INK,true));TextView note=label(subtitle,11,ThemePalette.readable(MUTED,palette.entrySurface,4.5),false);note.setPadding(0,dp(4),0,0);entry.addView(note);entry.setContentDescription(title+"，"+subtitle);entry.setFocusable(true);entry.setOnClickListener(v->action.run());return entry;
+        MoreMenu.Icon icon=new MoreMenu.Icon(this,iconId,palette.deepAccent);entry.addView(icon,new LinearLayout.LayoutParams(dp(32),dp(32)));space(entry,8);TextView heading=label(title,15,INK,true);heading.setSingleLine(true);heading.setEllipsize(android.text.TextUtils.TruncateAt.END);entry.addView(heading);TextView note=label(subtitle,11,ThemePalette.readable(MUTED,palette.entrySurface,4.5),false);note.setSingleLine(true);note.setEllipsize(android.text.TextUtils.TruncateAt.END);note.setPadding(0,dp(4),0,0);entry.addView(note);entry.setContentDescription(title+"，"+subtitle);entry.setFocusable(true);entry.setOnClickListener(v->action.run());return entry;
     }
     void showCustomCourses(){
         UiSheet sheet=new UiSheet(this,"自定义课程","独立保存 · 刷新不会覆盖",.76f);LinearLayout content=sheet.body;
@@ -422,6 +423,12 @@ public class MainActivity extends Activity {
         content.addView(label("课表与自定义课程保存在本机，离线可查看。",12,MUTED,false));return content;
     }
     void openIdentity(boolean repair){if(identityBusy)return;Intent intent=new Intent(this,IdentityActivity.class);intent.putExtra("repair",repair);startActivity(intent);}
+    /** 原生电费查询：读取宿舍灯光 / 空调电表余额。 */
+    void openElectricity(){startActivity(new Intent(this,ElectricityActivity.class));}
+    /** 缴费入口：沿用既有的 17wanxiao 网页会话（与电费查询共用同一条 SESSION）。 */
+    void openPayment(){if(identityBusy)return;Intent intent=new Intent(this,IdentityActivity.class);intent.putExtra("electricity",true);startActivity(intent);}
+    /** 大物实验报告：只允许校园网内的实验报告站点及其登录跳转。 */
+    void openPhysicsLab(){startActivity(new Intent(this,PhysicsLabActivity.class));}
     void clearIdentityPrompt(){
         if(identityBusy)return;UiSheet sheet=new UiSheet(this,"清除统一认证？","教务账号和本地课程继续保留",.43f);sheet.body.addView(label("将清除本机统一认证凭证与校园服务会话，并关闭统一认证自动登录。",14,INK,false));
         sheet.actions(this,"确认清除",()->{sheet.dialog.dismiss();identityBusy=true;render();authIo.execute(()->{

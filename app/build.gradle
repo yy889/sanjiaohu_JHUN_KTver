@@ -5,7 +5,7 @@ plugins {
 android {
     namespace 'cn.jhun.sanjiaohu'
     compileSdk 36
-    defaultConfig { applicationId 'cn.jhun.sanjiaohu'; minSdk 26; targetSdk 35; versionCode 33; versionName 'y7c_0.2' }
+    defaultConfig { applicationId 'cn.jhun.sanjiaohu'; minSdk 26; targetSdk 35; versionCode 36; versionName 'y7c_0.3.2' }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Must match compileOptions above or AGP fails its jvm-target validation.
     // Pinned to the same Kotlin the local build-local.ps1 compiles with.
