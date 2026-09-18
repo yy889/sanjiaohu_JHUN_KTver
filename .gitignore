@@ -10,6 +10,7 @@
 # Local build/scratch directories
 .buildwork/
 .testclasses/
+.ci-sim/
 build/
 .gradle/
 
